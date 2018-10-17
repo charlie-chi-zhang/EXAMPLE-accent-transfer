@@ -16,6 +16,7 @@ service = SpeechToTextV1(
 # print(json.dumps(model, indent=2))
 
 
+os.makedirs("cuts", exist_ok= True)
 for filename in os.listdir("recordings"):
 	if filename.endswith(".mp3"):
 		
@@ -23,6 +24,7 @@ for filename in os.listdir("recordings"):
 
 		speaker = filename[:-4]
 
+		os.makedirs("cuts/"+speaker, exist_ok= True)
 		dirName = "cuts/"+speaker+"/"
 
 		a = AudioSegment.from_mp3(mp3file)
@@ -43,8 +45,4 @@ for filename in os.listdir("recordings"):
 					strt = arr[1]
 					end = arr[2]
 					audio_slice = a[strt*1000:end*1000+50]
-					if not os.path.exists(dirName):
-						os.mkdir(dirName)
-						audio_slice.export(dirName + word+".wav", format="wav")
-					else:
-						audio_slice.export(dirName + word+".wav", format="wav")
+					audio_slice.export(dirName + word+".wav", format="wav")
