@@ -45,6 +45,6 @@ for filename in os.listdir("recordings"):
 					audio_slice = a[strt*1000:end*1000+50]
 					if not os.path.exists(dirName):
 						os.mkdir(dirName)
-						audio_slice.export(dirName + word+".mp3", format="mp3")
+						audio_slice.export(dirName + word+".wav", format="wav")
 					else:
-						audio_slice.export(dirName + word+".mp3", format="mp3")
+						audio_slice.export(dirName + word+".wav", format="wav")
