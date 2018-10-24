@@ -4,8 +4,8 @@ from pydub import AudioSegment
 import os
 
 service = SpeechToTextV1(
-    username='e419556c-7438-4bb7-8ab8-c365eb068e5d',
-    password='rVNNXhDSWCA0',
+    username='4b7d65dd-3483-4ce1-8402-dc00f3485ace',
+    password='7ieqG4SXDjMZ',
     url='https://stream.watsonplatform.net/speech-to-text/api'
 )
 
