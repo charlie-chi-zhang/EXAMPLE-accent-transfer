@@ -5,7 +5,7 @@ from fastdtw import fastdtw
 from scipy.spatial.distance import euclidean
 import matplotlib.pyplot as plt
 
-def get_aligned_mfccs(file_pair):
+def get_aligned_mfccs(file_pair, output_length):
     """
     Takes a pair of file paths, returns aligned MFCC coefficients for the two
     audio clips
@@ -40,10 +40,18 @@ def get_aligned_mfccs(file_pair):
     sample_aligned = [sample[i] for (i, j) in path]
     target_aligned = [target[j] for (i, j) in path]
     
-    return (np.array(sample_aligned), np.array(target_aligned))
+    aligned_length = len(sample_aligned)
+    
+    head_padding = [np.zeros(13) for i in range((output_length - aligned_length) // 2)]
+    tail_padding = [np.zeros(13) for i in range((output_length - aligned_length) // 2)]
+    
+    padded_sample = head_padding + sample_aligned + tail_padding
+    padded_target = head_padding + target_aligned + tail_padding
+    
+    return (np.array(padded_sample), np.array(padded_target))
 
 def reconstruct_from_mfcc(coeffs):
     pass
 
 
-print(get_aligned_mfccs(("Data/kaggle_cuts/bosnian3/Wednesday.mp3","Data/kaggle_cuts/english368/Wednesday.mp3")))
+print(get_aligned_mfccs(("Data/kaggle_cuts/bosnian3/Wednesday.mp3","Data/kaggle_cuts/english368/Wednesday.mp3"), 250)[0][125])

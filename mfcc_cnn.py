@@ -14,12 +14,12 @@ batch_size = 50
 coef_num = 13
 samples = 200
 
-x = tf.placeholder(tf.float32, [None, coef_num, samples])
-y = tf.placeholder(tf.float32, [None, coef_num, samples])
+x = tf.placeholder(tf.float32, [None, coef_num, samples, 1])
+y = tf.placeholder(tf.float32, [None, coef_num, samples, 1])
 
 def create_new_conv_layer(input_data, num_input_channels, num_filters, filter_shape, pool_shape, name):
     # setup the filter input shape for tf.nn.conv_2d
-    conv_filt_shape = [filter_shape, num_input_channels,
+    conv_filt_shape = [filter_shape[0], filter_shape[1], num_input_channels,
                       num_filters]
 
     # initialise weights and bias for the filter
@@ -43,3 +43,5 @@ def create_new_conv_layer(input_data, num_input_channels, num_filters, filter_sh
                                padding='SAME')
 
     return out_layer
+
+layer1 = create_new_conv_layer(x, 1, 32, [5, 5], [2, 2], name='layer1')
