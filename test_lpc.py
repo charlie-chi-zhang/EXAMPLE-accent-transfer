@@ -3,7 +3,7 @@ from pydub import AudioSegment
 import numpy as np
 import librosa
 
-AudioSegment.ffmpeg = r'C:\\ffmpeg-4.0.2-win64-static\\bin\\ffmpeg.exe'
+# AudioSegment.ffmpeg = r'C:\\ffmpeg-4.0.2-win64-static\\bin\\ffmpeg.exe'
 
 test1 = u"Data/kaggle_cuts/bosnian3/Wednesday.mp3"
 test2 = u"Data/kaggle_cuts/english368/Wednesday.mp3"
