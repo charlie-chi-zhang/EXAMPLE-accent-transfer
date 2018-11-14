@@ -8,6 +8,7 @@ from scipy.spatial.distance import euclidean
 import wave
 from pydub import AudioSegment
 import subprocess
+import os
 
 def invlogamplitude(S):
     """librosa.logamplitude is actually 10_log10, so invert that."""
@@ -34,43 +35,34 @@ def frange(x, y, jump):
 
 def gen_mfcc(filename, offset = 0, duration = 0.005):
 
-	sr = 20000
+	sr = 22050
 	n_mfcc=25
+	n_mels=128
+	n_fft=108
 
 	y, sr = librosa.load(filename, 
 						sr = sr, 
-						offset = offset, 
-						duration = duration
+						#offset = offset, 
+						#duration = duration
 						)
 
 	# calculate mfcc
 	#Y = librosa.stft(y)
 	mfccs = librosa.feature.mfcc(y,
 								sr=sr,
-								n_mfcc=n_mfcc)
-	# print(mfccs, y.shape, sr)
+								n_mfcc=n_mfcc,
+								n_mels=n_mels,
+								n_fft=n_fft,
+								hop_length=n_fft // 4)
+
 	return mfccs, y, sr
 
-def allign_sample_target(sample_mfcc, target_mfcc, max_size = None):
+def align_sample_target(sample_mfcc, target_mfcc):
 
-	max_size = max(sample_mfcc.T.shape[0],target_mfcc.T.shape[0])
-	min_size = min(sample_mfcc.T.shape[0],target_mfcc.T.shape[0])
+	distance, path = fastdtw(sample_mfcc.T, target_mfcc.T, dist=mfcc_dist)
 
-	# print(max_size-min_size)
-	# print(target_mfcc.T.shape)
-	# print(sample_mfcc.T.shape)
-
-	sample = np.pad(sample_mfcc.T, (max_size-min_size,0), mode = "constant")
-	target = np.pad(target_mfcc.T, (max_size-min_size,0), mode = "constant")
-
-	# print(sample.shape)
-
-	distance, path = fastdtw(sample, target, dist=mfcc_dist)
-
-	sample_aligned = [sample[i] for (i, j) in path]
-	target_aligned = [target[j] for (i, j) in path]
-
-	#print(np.array(sample_aligned).T.shape)
+	sample_aligned = [sample_mfcc.T[i] for (i, j) in path]
+	target_aligned = [target_mfcc.T[j] for (i, j) in path]
 
 	return np.array(sample_aligned).T, np.array(target_aligned).T
 
@@ -80,7 +72,7 @@ def mfcc_to_wav(mfccs, y, sr, output_nm = 'output.wav'):
 	n_mfcc = mfccs.shape[0]
 	n_mel = 128
 	dctm = librosa.filters.dct(n_mfcc, n_mel)
-	n_fft = 2048
+	n_fft = 108
 	mel_basis = librosa.filters.mel(sr, n_fft)
 
 	# Empirical scaling of channels to get ~flat amplitude mapping.
@@ -91,7 +83,10 @@ def mfcc_to_wav(mfccs, y, sr, output_nm = 'output.wav'):
 
 	# Impose reconstructed magnitude on white noise STFT.
 	excitation = np.random.randn(y.shape[0])
-	E = librosa.stft(excitation)
+	E = librosa.stft(excitation, n_fft=n_fft)
+	print(excitation.shape)
+	print(E.shape)
+	print(y.shape)
 	E = librosa.util.pad_center(E, recon_stft.shape[1], axis=1, mode = 'minimum')
 	recon = librosa.istft(E/np.abs(E)*np.sqrt(recon_stft))
 	# Output
@@ -161,60 +156,51 @@ def combine_wav_parts(n):
 
 	combine.export("output1.mp3", format="mp3")
 
-	
+
+def gen_data(sample_accent, target_accent):
+
+	labels = np.array([])
+	data = np.array([])
+	rootdir = "Data/kaggle_cuts"
+	i = 1
+	for subdir, dirs, files in os.walk(rootdir):
+		accent = subdir.split("/")[-1]
+		if accent.startswith(sample_accent):
+			print("Processing " + str(i) + "/19 folder")
+			i += 1
+			for subdir2, dirs2, files2 in os.walk(rootdir):
+				accent2 = subdir2.split("/")[-1]
+				if accent2.startswith(target_accent):
+					for file in files:
+						for file2 in files2:
+							if file == file2:
+								mfcc1, y1, sr1 = gen_mfcc(subdir+"/"+file)
+								mfcc2, y2, sr2 = gen_mfcc(subdir2+"/"+file2)
+								mfcc1, mfcc2 = align_sample_target(mfcc1, mfcc2)
+								if labels.size == 0:
+									data = mfcc1.T
+									labels = mfcc2.T
+								else:
+									data = np.vstack((data,mfcc1.T))
+									labels = np.vstack((labels,mfcc2.T))
+	np.save("kaggle_data.npy", data)
+	np.save("kaggle_labels.npy", labels)
+	print("Data Collection Finished and Saved!")
+	return data, labels
 
 
 
 
-sample = u"Data/kaggle_cuts/arabic8/Wednesday.mp3"
-target = u"Data/kaggle_cuts/english368/Wednesday.mp3"
-
-samplem, targetm, y_sr = create_alligned_windows(sample, target, window_size = 0.01)
-
-# print(np.array([samplem[0]]).T)
-
-# produce_wave_parts(samplem, y_sr)
-# #AudioSegment.from_wav("testing/1.wav").export("testing/1.mp3", format="mp3")
-# # print(MP3("testing/1.mp3").info.length)
-# # AudioSegment.from_mp3("testing/1.mp3")
-# combine_wav_parts(152)
-
-print(MP3("output1.mp3").info.length)
-
-# y = y_sr[0][0].shape[0]*samplem.shape[1]
-# sr = int(y_sr[0][1]*0.5)
-
-# mfcc_to_wav(samplem, y, sr)
-
-#print(audio.info.length)
-#print(gen_mfcc(sample))
 
 
-# # Build reconstruction mappings,
-# n_mfcc = mfccs.shape[0]
-# n_mel = 128
-# dctm = librosa.filters.dct(n_mfcc, n_mel)
-# n_fft = 2048
-# mel_basis = librosa.filters.mel(sr, n_fft)
+		# for file in files:
+		# 	print(file)
+# sample = u"Data/kaggle_cuts/arabic8/Wednesday.mp3"
+# target = u"Data/kaggle_cuts/english368/Wednesday.mp3"
+# m,y,s = gen_mfcc(sample)
+# m2,y2,s2 = gen_mfcc(target)
+# m,m2 = align_sample_target(m,m2)
+# mfcc_to_wav(m2, y2, s2, output_nm = 'output4.wav')
 
-# # Empirical scaling of channels to get ~flat amplitude mapping.
-# bin_scaling = 1.0/np.maximum(0.0005, np.sum(np.dot(mel_basis.T, mel_basis),axis=0))
+gen_data("aenglish","benglish")
 
-# # Reconstruct the approximate STFT squared-magnitude from the MFCCs.
-# recon_stft = bin_scaling[:, np.newaxis] * np.dot(mel_basis.T,invlogamplitude(np.dot(dctm.T, mfccs)))
-
-# # Impose reconstructed magnitude on white noise STFT.
-# excitation = np.random.randn(y.shape[0])
-# E = librosa.stft(excitation)
-# recon = librosa.istft(E/np.abs(E)*np.sqrt(recon_stft))
-
-# # Output
-# librosa.output.write_wav('output.wav', recon, sr)
-
-# plt.style.use('seaborn-darkgrid')
-# plt.figure(1)
-# plt.subplot(211)
-# librosa.display.waveplot(y, sr)
-# plt.subplot(212)
-# librosa.display.waveplot(recon,sr)
-# plt.show()
