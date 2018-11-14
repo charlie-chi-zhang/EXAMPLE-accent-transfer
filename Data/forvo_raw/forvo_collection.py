@@ -2,8 +2,8 @@ import requests
 import csv
 import os
 
-#key = '18a8a59befbe681773f34adad96429a9'
-key = 'ca1b59c6e22f7b5e51a505259d738cec'
+key = '18a8a59befbe681773f34adad96429a9'
+#key = 'ca1b59c6e22f7b5e51a505259d738cec'
 
 #r = requests.get('https://apifree.forvo.com/key/'+key+'/format/json/action/popular-pronounced-words/language/en/limit/5000')
 
@@ -14,7 +14,7 @@ with open('forvo_data.csv', mode='a',newline='') as csv_file:
     fieldnames = ['id', 'word', 'original', 'addtime', 'hits', 'username', 'sex', 'country', 'code', 'langname', 'pathmp3', 'pathogg', 'num_votes', 'num_positive_votes', 'rate']
     writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
     
-    for i in range(890,920):
+    for i in range(950, 980):
         r = requests.get('https://apifree.forvo.com/key/' + key + '/format/json/action/word-pronunciations/word/' + top_words[i] + '/language/en')
         
         for entry in r.json()['items']:
