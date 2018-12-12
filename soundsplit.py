@@ -16,16 +16,19 @@ service = SpeechToTextV1(
 # print(json.dumps(model, indent=2))
 
 
-os.makedirs("cuts", exist_ok= True)
-for filename in os.listdir("recordings"):
+os.makedirs("Data/kaggle_cuts", exist_ok= True)
+for filename in os.listdir("Data/kaggle_raw"):
 	if filename.endswith(".mp3"):
 		
-		mp3file = 'recordings/'+filename
+		mp3file = 'Data/kaggle_raw/'+filename
 
 		speaker = filename[:-4]
+		if not speaker.startswith("spanish") and not speaker.startswith("arabic"):
+			continue
 
-		os.makedirs("cuts/"+speaker, exist_ok= True)
-		dirName = "cuts/"+speaker+"/"
+		os.makedirs("Data/kaggle_cuts/"+speaker, exist_ok= True)
+		print(speaker)
+		dirName = "Data/kaggle_cuts/"+speaker+"/"
 
 		a = AudioSegment.from_mp3(mp3file)
 
